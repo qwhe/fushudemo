@@ -187,7 +187,7 @@ function onStyleUpdate(id: string, changes: Partial<TextLayer>) {
 }
 
 // --- Canvas drag ---
-function onDragLayer(id: string, changes: Partial<{ x: number; y: number }>) {
+function onDragLayer(id: string, changes: Partial<{ x: number; y: number; rotation: number }>) {
   updateLayer(id, changes)
 }
 

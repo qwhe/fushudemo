@@ -65,10 +65,17 @@ export function layoutText(
   const fontWeight = layer.fontWeight
   const maxWidth = layer.maxWidth * scale
 
-  // Long text: auto-shrink font
-  const MIN_FONT_SIZE = 16
+  // Smart auto-shrink: reduce font size if text is too long or too many lines
+  const MIN_FONT_SIZE = 20
   let lines = wrapLines(ctx, layer.text, maxWidth, fontSize * scale, fontWeight)
-  while (lines.length > 8 && fontSize > MIN_FONT_SIZE) {
+  const maxLines = Math.max(3, Math.floor((layer.maxWidth || 800) / (fontSize * 1.5)))
+  while (lines.length > maxLines && fontSize > MIN_FONT_SIZE) {
+    fontSize -= 2
+    lines = wrapLines(ctx, layer.text, maxWidth, fontSize * scale, fontWeight)
+  }
+  // Also shrink if a single line is extremely long
+  const longestLine = lines.reduce((max, line) => Math.max(max, line.length), 0)
+  while (longestLine > 20 && fontSize > MIN_FONT_SIZE && lines.length <= 2) {
     fontSize -= 2
     lines = wrapLines(ctx, layer.text, maxWidth, fontSize * scale, fontWeight)
   }

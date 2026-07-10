@@ -14,15 +14,21 @@ function defaultTextLayer(): TextLayer {
     x: 0,
     y: 0,
     maxWidth: 800,
-    fontSize: 48,
+    fontSize: 56,
     fontFamily: '"PingFang SC", "Microsoft YaHei", system-ui, sans-serif',
-    fontWeight: 'normal',
+    fontWeight: 'bold',
     color: '#ffffff',
-    strokeEnabled: false,
+    strokeEnabled: true,
     strokeColor: '#000000',
-    strokeWidth: 3,
+    strokeWidth: 4,
     align: 'center',
     lineHeight: 1.3,
+    shadowEnabled: false,
+    shadowColor: '#000000',
+    shadowBlur: 4,
+    shadowOffsetX: 2,
+    shadowOffsetY: 2,
+    rotation: 0,
   }
 }
 
@@ -89,7 +95,7 @@ export function useMemeProject() {
     const layer = activeTextLayer.value
     if (!layer) return
     updateLayer(layer.id, {
-      fontSize: 48,
+      fontSize: 56,
       fontWeight: 'bold',
       color: '#ffffff',
       strokeEnabled: true,
@@ -97,6 +103,8 @@ export function useMemeProject() {
       strokeWidth: 4,
       align: 'center',
       lineHeight: 1.3,
+      shadowEnabled: false,
+      rotation: 0,
     })
   }
 
@@ -124,6 +132,12 @@ export function useMemeProject() {
       strokeWidth: defaults.strokeWidth,
       align: defaults.align,
       lineHeight: defaults.lineHeight,
+      shadowEnabled: defaults.shadowEnabled,
+      shadowColor: defaults.shadowColor,
+      shadowBlur: defaults.shadowBlur,
+      shadowOffsetX: defaults.shadowOffsetX,
+      shadowOffsetY: defaults.shadowOffsetY,
+      rotation: defaults.rotation,
     })
   }
 

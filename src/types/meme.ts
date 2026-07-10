@@ -13,6 +13,12 @@ export type TextLayer = {
   strokeWidth: number
   align: 'left' | 'center' | 'right'
   lineHeight: number
+  shadowEnabled: boolean
+  shadowColor: string
+  shadowBlur: number
+  shadowOffsetX: number
+  shadowOffsetY: number
+  rotation: number
 }
 
 export type MemeProject = {

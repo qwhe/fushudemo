@@ -38,6 +38,21 @@
         <button v-for="lh in lineHeights" :key="lh.value" class="toggle-btn" :class="{ active: Math.abs(layer.lineHeight - lh.value) < 0.05 }" @click="updateProp('lineHeight', lh.value)">{{ lh.label }}</button>
       </div>
     </div>
+    <div class="tool-row">
+      <label>阴影</label>
+      <button class="toggle-btn" :class="{ active: layer.shadowEnabled }" @click="updateProp('shadowEnabled', !layer.shadowEnabled)">阴影</button>
+      <template v-if="layer.shadowEnabled">
+        <input type="color" :value="layer.shadowColor" @input="updateProp('shadowColor', ($event.target as HTMLInputElement).value)" class="color-picker small" />
+        <input type="range" :min="0" :max="20" v-model.number="shadowBlur" class="slider" />
+        <span class="value">{{ shadowBlur }}</span>
+      </template>
+    </div>
+    <div class="tool-row">
+      <label>旋转</label>
+      <input type="range" :min="-180" :max="180" v-model.number="rotation" class="slider" />
+      <span class="value">{{ rotation }}°</span>
+      <button class="toggle-btn small" @click="updateProp('rotation', 0)">归零</button>
+    </div>
     <div class="tool-row actions">
       <button class="action-btn classic" @click="emit('classic')">经典样式</button>
       <button class="action-btn" @click="emit('center')">水平居中</button>
@@ -60,10 +75,16 @@ const emit = defineEmits<{
 
 const fontSize = ref(props.layer.fontSize)
 const strokeWidth = ref(props.layer.strokeWidth)
+const shadowBlur = ref(props.layer.shadowBlur)
+const rotation = ref(props.layer.rotation)
 watch(() => props.layer.fontSize, (v) => { fontSize.value = v })
 watch(() => props.layer.strokeWidth, (v) => { strokeWidth.value = v })
+watch(() => props.layer.shadowBlur, (v) => { shadowBlur.value = v })
+watch(() => props.layer.rotation, (v) => { rotation.value = v })
 watch(fontSize, (v) => updateProp('fontSize', v))
 watch(strokeWidth, (v) => updateProp('strokeWidth', v))
+watch(shadowBlur, (v) => updateProp('shadowBlur', v))
+watch(rotation, (v) => updateProp('rotation', v))
 
 const colorPresets = ['#ffffff', '#000000', '#ffdd00', '#ff3333']
 const aligns = [

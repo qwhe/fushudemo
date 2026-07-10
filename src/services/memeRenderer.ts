@@ -32,9 +32,34 @@ export function renderMeme(
     const fontSize = layout.actualFontSize * scale
     const isActive = layer.id === project.activeTextLayerId
 
+    // Apply rotation if needed
+    if (layer.rotation !== 0 && layout.lines.length > 0) {
+      const firstLine = layout.lines[0]
+      const lastLine = layout.lines[layout.lines.length - 1]
+      const centerX = firstLine.x + layer.maxWidth * scale / 2
+      const centerY = firstLine.y + (lastLine.y - firstLine.y) / 2
+      ctx.save()
+      ctx.translate(centerX, centerY)
+      ctx.rotate((layer.rotation * Math.PI) / 180)
+      ctx.translate(-centerX, -centerY)
+    }
+
     for (const line of layout.lines) {
       ctx.font = `${layer.fontWeight} ${fontSize}px ${FALLBACK_FONT}`
       ctx.textBaseline = 'top'
+
+      // Shadow
+      if (layer.shadowEnabled) {
+        ctx.shadowColor = layer.shadowColor
+        ctx.shadowBlur = layer.shadowBlur * scale
+        ctx.shadowOffsetX = layer.shadowOffsetX * scale
+        ctx.shadowOffsetY = layer.shadowOffsetY * scale
+      } else {
+        ctx.shadowColor = 'transparent'
+        ctx.shadowBlur = 0
+        ctx.shadowOffsetX = 0
+        ctx.shadowOffsetY = 0
+      }
 
       // Stroke
       if (layer.strokeEnabled && layer.strokeWidth > 0) {
@@ -47,6 +72,15 @@ export function renderMeme(
       // Fill
       ctx.fillStyle = layer.color
       ctx.fillText(line.text, line.x, line.y)
+    }
+
+    // Reset shadow and transform
+    ctx.shadowColor = 'transparent'
+    ctx.shadowBlur = 0
+    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetY = 0
+    if (layer.rotation !== 0) {
+      ctx.restore()
     }
 
     // Draw guide border for active layer
