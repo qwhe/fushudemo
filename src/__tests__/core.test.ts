@@ -13,7 +13,15 @@ function createMockCtx(): CanvasRenderingContext2D {
     strokeStyle: '#000',
     lineWidth: 1,
     lineJoin: 'round' as CanvasLineJoin,
+    shadowColor: 'transparent',
+    shadowBlur: 0,
+    shadowOffsetX: 0,
+    shadowOffsetY: 0,
     setLineDash: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn(),
+    translate: vi.fn(),
+    rotate: vi.fn(),
     measureText(text: string) {
       const fontSizeMatch = ctx.font.match(/(\d+(?:\.\d+)?)px/)
       const fontSize = fontSizeMatch ? parseFloat(fontSizeMatch[1]) : 48
@@ -52,6 +60,12 @@ function makeLayer(overrides: Partial<TextLayer> = {}): TextLayer {
     strokeWidth: 3,
     align: 'center',
     lineHeight: 1.3,
+    shadowEnabled: false,
+    shadowColor: '#000000',
+    shadowBlur: 4,
+    shadowOffsetX: 2,
+    shadowOffsetY: 2,
+    rotation: 0,
     ...overrides,
   }
 }
