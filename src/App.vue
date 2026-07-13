@@ -205,7 +205,6 @@ const showToolbar = ref(false)
 const exportBlobUrl = ref<string | null>(null)
 let exportBlob: Blob | null = null
 
-// File input refs
 const fileInputRef = ref<HTMLInputElement>()
 const fileInputRef2 = ref<HTMLInputElement>()
 const cropperRef = ref<InstanceType<typeof ImageCropper>>()
@@ -214,7 +213,6 @@ const canvasAreaRef = ref<HTMLDivElement>()
 const canvasAreaRef2 = ref<HTMLDivElement>()
 const inlineTextareaRef = ref<HTMLTextAreaElement>()
 
-// Inline editing state
 const editing = ref(false)
 const editText = ref('')
 
@@ -234,7 +232,6 @@ onMounted(() => {
   loadBgImage(baseImageSrc)
 })
 
-// --- Image upload ---
 function triggerUpload() {
   fileInputRef.value?.click()
 }
@@ -242,7 +239,6 @@ function triggerUpload() {
 function onFileSelected(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
-  // Reset file input so same file can be selected again
   ;(e.target as HTMLInputElement).value = ''
   const reader = new FileReader()
   reader.onload = () => {
@@ -258,7 +254,6 @@ function onCropped(dataUrl: string) {
   loadBgImage(dataUrl)
 }
 
-// --- Debounced history push (merge rapid changes into one step) ---
 let lastPushTime = 0
 let pendingSnapshot: MemeProject | null = null
 const MERGE_INTERVAL = 1500
@@ -266,11 +261,8 @@ const MERGE_INTERVAL = 1500
 function pushHistory() {
   const now = Date.now()
   if (now - lastPushTime < MERGE_INTERVAL && pendingSnapshot) {
-    // Within merge window: keep the ORIGINAL snapshot (before first change)
-    // Just extend the window by updating lastPushTime
     lastPushTime = now
   } else {
-    // New merge window: flush old pending, start new one
     if (pendingSnapshot) {
       history.pushState(pendingSnapshot)
     }
@@ -286,13 +278,11 @@ function flushHistory() {
   }
 }
 
-// --- Text change (inline edit) ---
 function onTextChange(text: string) {
   pushHistory()
   updateLayer(activeLayer.value!.id, { text })
 }
 
-// --- Inline edit on canvas ---
 const editorStyle = computed(() => {
   if (!bgImage.value || !activeLayer.value) return {}
   const layer = activeLayer.value
@@ -304,7 +294,6 @@ const editorStyle = computed(() => {
 
   const areaRect = area.getBoundingClientRect()
   const canvasRect = canvasEl.getBoundingClientRect()
-  // Account for canvas centering offset within the flex container
   const offsetX = canvasRect.left - areaRect.left
   const offsetY = canvasRect.top - areaRect.top
 
@@ -314,7 +303,6 @@ const editorStyle = computed(() => {
   const left = offsetX + layer.x * scaleX
   const top = offsetY + layer.y * scaleY - 44
 
-  // Clamp within visible area bounds
   const maxLeft = areaRect.width - 16
   const maxTop = areaRect.height - 80
 
@@ -351,40 +339,31 @@ function finishEdit() {
   editing.value = false
 }
 
-// --- Style change ---
 function onStyleUpdate(id: string, changes: Partial<TextLayer>) {
   pushHistory()
   updateLayer(id, changes)
 }
 
-// --- Canvas gesture history (drag, pinch, rotate) ---
 function onGestureStart() {
   flushHistory()
   history.pushState(JSON.parse(JSON.stringify(project)))
 }
 
-function onGestureEnd() {
-  // Nothing needed
-}
+function onGestureEnd() {}
 
-// --- Canvas drag ---
 function onDragLayer(id: string, changes: Partial<{ x: number; y: number; fontSize: number; rotation: number }>) {
   updateLayer(id, changes)
 }
 
-// --- Quick actions ---
 function onReset() {
   flushHistory()
   history.pushState(JSON.parse(JSON.stringify(project)))
   resetStyle()
 }
 
-// --- Undo / Redo ---
 function applyState(state: MemeProject) {
-  // Deep replace: works reliably with reactive
   project.backgroundSrc = state.backgroundSrc
   project.activeTextLayerId = state.activeTextLayerId
-  // Clear and repopulate textLayers
   while (project.textLayers.length > 0) {
     project.textLayers.pop()
   }
@@ -420,7 +399,6 @@ function onRedo() {
   }
 }
 
-// --- Restart ---
 const showResetConfirm = ref(false)
 function confirmRestart() {
   showResetConfirm.value = true
@@ -428,10 +406,8 @@ function confirmRestart() {
 function doReset() {
   showResetConfirm.value = false
   history.pushState(JSON.parse(JSON.stringify(project)))
-  // Restore default background
   project.backgroundSrc = ''
   loadBgImage(baseImageSrc)
-  // Reset text
   restart()
   const layer = project.textLayers[0]
   if (layer && bgImage.value) {
@@ -445,7 +421,6 @@ function cancelReset() {
   showResetConfirm.value = false
 }
 
-// --- Caption ---
 function onCaptionSelect(caption: string) {
   flushHistory()
   history.pushState(JSON.parse(JSON.stringify(project)))
@@ -456,23 +431,18 @@ function onCaptionSelect(caption: string) {
   })
 }
 
-// --- Export ---
 async function onExport() {
   if (!bgImage.value) return
   try {
     exportBlob = await exp.generateExport(JSON.parse(JSON.stringify(project)), bgImage.value)
-    // Use data URL for WeChat compatibility (blob URL causes 25MB error)
     const reader = new FileReader()
     reader.onload = () => {
       exportBlobUrl.value = reader.result as string
     }
     reader.readAsDataURL(exportBlob)
-  } catch {
-    // Already exporting or error
-  }
+  } catch {}
 }
 
-// --- Download / Share / Copy ---
 function onDownload() {
   if (!exportBlob) return
   const ts = Math.floor(Date.now() / 1000)
@@ -482,7 +452,6 @@ function onDownload() {
 
 async function onShare() {
   if (!exportBlob) return
-  // Check WeChat: prompt long-press instead
   const isWeChat = /micromessenger/i.test(navigator.userAgent)
   if (isWeChat) {
     toastRef.value?.show('请长按图片 → 选择「转发给朋友」', 'info', 3000)
@@ -545,7 +514,6 @@ body {
   overflow: hidden;
 }
 
-/* ---- Confirmation Dialog ---- */
 .confirm-overlay {
   position: fixed;
   inset: 0;
@@ -590,7 +558,6 @@ body {
   color: #fff;
 }
 
-/* ---- Mobile Layout ---- */
 .mobile-layout {
   display: flex;
   flex-direction: column;
@@ -785,7 +752,7 @@ body {
     height: 100%;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 24px 32px;
+    padding: 16px 32px;
     gap: 32px;
     overflow: hidden;
   }
@@ -830,6 +797,13 @@ body {
     position: relative;
   }
 
+  .desktop-canvas-area canvas {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+  }
+
   .desktop-actions {
     display: flex;
     gap: 8px;
@@ -851,7 +825,6 @@ body {
   }
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 4px;
 }
