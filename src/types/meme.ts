@@ -6,7 +6,7 @@ export type TextLayer = {
   maxWidth: number
   fontSize: number
   fontFamily: string
-  fontWeight: 'normal' | 'bold'
+  fontWeight: 'normal' | 'bold' | 'extra-bold'
   color: string
   strokeEnabled: boolean
   strokeColor: string

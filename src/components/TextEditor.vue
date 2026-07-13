@@ -1,18 +1,38 @@
 <template>
   <textarea
+    ref="textareaRef"
     class="text-editor"
     :value="text"
-    @input="emit('update:text', ($event.target as HTMLTextAreaElement).value)"
+    @input="onInput"
     placeholder="输入表情包文案..."
-    rows="2"
+    rows="1"
+    maxlength="150"
   />
 </template>
 
 <script setup lang="ts">
-defineProps<{ text: string }>()
+import { ref, watch, nextTick } from 'vue'
+
+const props = defineProps<{ text: string }>()
 const emit = defineEmits<{
   (e: 'update:text', value: string): void
 }>()
+
+const textareaRef = ref<HTMLTextAreaElement>()
+
+function autoGrow() {
+  const el = textareaRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+}
+
+function onInput(e: Event) {
+  emit('update:text', (e.target as HTMLTextAreaElement).value)
+  autoGrow()
+}
+
+watch(() => props.text, () => nextTick(autoGrow))
 </script>
 
 <style scoped>
@@ -28,7 +48,9 @@ const emit = defineEmits<{
   outline: none;
   font-family: inherit;
   line-height: 1.5;
-  min-height: 60px;
+  min-height: 44px;
+  max-height: 120px;
+  overflow-y: auto;
   transition: border-color 0.2s;
 }
 .text-editor:focus {

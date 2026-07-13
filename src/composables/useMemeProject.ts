@@ -10,13 +10,13 @@ function generateId(): string {
 function defaultTextLayer(): TextLayer {
   return {
     id: generateId(),
-    text: '',
+    text: '大家都停✋一下，我有话说',
     x: 0,
     y: 0,
     maxWidth: 800,
-    fontSize: 56,
-    fontFamily: '"PingFang SC", "Microsoft YaHei", system-ui, sans-serif',
-    fontWeight: 'bold',
+    fontSize: 72,
+    fontFamily: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif',
+    fontWeight: 'extra-bold',
     color: '#ffffff',
     strokeEnabled: true,
     strokeColor: '#000000',
@@ -41,10 +41,28 @@ function createDefaultProject(): MemeProject {
   }
 }
 
+function ensureDefaults(project: MemeProject) {
+  // Ensure default text if empty
+  for (const layer of project.textLayers) {
+    if (!layer.text || layer.text.trim() === '') {
+      layer.text = '大家都停✋一下，我有话说'
+    }
+    // Ensure default font style
+    if (!layer.fontFamily || layer.fontFamily.includes('system-ui')) {
+      layer.fontFamily = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
+    }
+    if (layer.fontWeight === 'normal') {
+      layer.fontWeight = 'extra-bold'
+    }
+  }
+}
+
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 export function useMemeProject() {
-  const project = reactive<MemeProject>(loadFromStorage() ?? createDefaultProject())
+  const loaded = loadFromStorage()
+  const project = reactive<MemeProject>(loaded ?? createDefaultProject())
+  ensureDefaults(project)
 
   // Ensure there is always at least one text layer and an active layer id
   if (project.textLayers.length === 0) {
@@ -125,7 +143,9 @@ export function useMemeProject() {
     const defaults = defaultTextLayer()
     updateLayer(layer.id, {
       fontSize: defaults.fontSize,
+      fontFamily: defaults.fontFamily,
       fontWeight: defaults.fontWeight,
+      maxWidth: defaults.maxWidth,
       color: defaults.color,
       strokeEnabled: defaults.strokeEnabled,
       strokeColor: defaults.strokeColor,
@@ -147,6 +167,7 @@ export function useMemeProject() {
     project.backgroundSrc = newProject.backgroundSrc
     project.textLayers.splice(0, project.textLayers.length, ...newProject.textLayers)
     project.activeTextLayerId = newProject.activeTextLayerId
+    ensureDefaults(project)
   }
 
   // --- Save / Load localStorage ---

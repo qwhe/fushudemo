@@ -20,8 +20,10 @@ function measureLine(
   text: string,
   fontSize: number,
   fontWeight: string,
+  fontFamily: string,
 ): number {
-  ctx.font = `${fontWeight} ${fontSize}px ${FALLBACK_FONT}`
+  const weight = fontWeight === 'extra-bold' ? '900' : fontWeight
+  ctx.font = `${weight} ${fontSize}px ${fontFamily || FALLBACK_FONT}`
   return ctx.measureText(text).width
 }
 
@@ -31,6 +33,7 @@ function wrapLines(
   maxWidth: number,
   fontSize: number,
   fontWeight: string,
+  fontFamily: string,
 ): string[] {
   const paragraphs = text.split('\n')
   const allLines: string[] = []
@@ -43,7 +46,7 @@ function wrapLines(
     let current = ''
     for (const char of para) {
       const test = current + char
-      if (measureLine(ctx, test, fontSize, fontWeight) > maxWidth && current !== '') {
+      if (measureLine(ctx, test, fontSize, fontWeight, fontFamily) > maxWidth && current !== '') {
         allLines.push(current)
         current = char
       } else {
@@ -63,21 +66,22 @@ export function layoutText(
 ): TextLayoutResult {
   let fontSize = layer.fontSize
   const fontWeight = layer.fontWeight
+  const fontFamily = layer.fontFamily
   const maxWidth = layer.maxWidth * scale
 
   // Smart auto-shrink: reduce font size if text is too long or too many lines
   const MIN_FONT_SIZE = 20
-  let lines = wrapLines(ctx, layer.text, maxWidth, fontSize * scale, fontWeight)
+  let lines = wrapLines(ctx, layer.text, maxWidth, fontSize * scale, fontWeight, fontFamily)
   const maxLines = Math.max(3, Math.floor((layer.maxWidth || 800) / (fontSize * 1.5)))
   while (lines.length > maxLines && fontSize > MIN_FONT_SIZE) {
     fontSize -= 2
-    lines = wrapLines(ctx, layer.text, maxWidth, fontSize * scale, fontWeight)
+    lines = wrapLines(ctx, layer.text, maxWidth, fontSize * scale, fontWeight, fontFamily)
   }
   // Also shrink if a single line is extremely long
   const longestLine = lines.reduce((max, line) => Math.max(max, line.length), 0)
   while (longestLine > 20 && fontSize > MIN_FONT_SIZE && lines.length <= 2) {
     fontSize -= 2
-    lines = wrapLines(ctx, layer.text, maxWidth, fontSize * scale, fontWeight)
+    lines = wrapLines(ctx, layer.text, maxWidth, fontSize * scale, fontWeight, fontFamily)
   }
 
   const scaledFontSize = fontSize * scale
@@ -86,7 +90,7 @@ export function layoutText(
 
   const lineMetrics: LineMetrics[] = []
   for (let i = 0; i < lines.length; i++) {
-    const lineW = measureLine(ctx, lines[i], scaledFontSize, fontWeight)
+    const lineW = measureLine(ctx, lines[i], scaledFontSize, fontWeight, fontFamily)
     let x: number
     if (layer.align === 'center') {
       x = layer.x * scale + (maxWidth - lineW) / 2
