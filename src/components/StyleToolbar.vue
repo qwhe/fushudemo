@@ -1,9 +1,29 @@
 <template>
   <div class="style-toolbar">
     <div class="tool-row">
+      <label>字体</label>
+      <div class="btn-group">
+        <button
+          v-for="f in fontOptions"
+          :key="f.value"
+          class="toggle-btn"
+          :class="{ active: currentFont === f.value }"
+          @click="selectFont(f.value)"
+        >
+          {{ f.label }}
+        </button>
+      </div>
+    </div>
+    <div class="tool-row">
       <label>字号</label>
       <input type="range" :min="16" :max="120" v-model.number="fontSize" class="slider" />
       <span class="value">{{ fontSize }}</span>
+    </div>
+    <div class="tool-row">
+      <label>旋转</label>
+      <input type="range" :min="-180" :max="180" v-model.number="rotation" class="slider" />
+      <span class="value">{{ rotation }}°</span>
+      <button class="toggle-btn small" @click="updateProp('rotation', 0)" title="重置旋转">0°</button>
     </div>
     <div class="tool-row">
       <label>颜色</label>
@@ -14,10 +34,6 @@
       </div>
     </div>
     <div class="tool-row">
-      <label>粗体</label>
-      <button class="toggle-btn" :class="{ active: layer.fontWeight === 'bold' }" @click="updateProp('fontWeight', layer.fontWeight === 'bold' ? 'normal' : 'bold')">B</button>
-    </div>
-    <div class="tool-row">
       <label>描边</label>
       <button class="toggle-btn" :class="{ active: layer.strokeEnabled }" @click="updateProp('strokeEnabled', !layer.strokeEnabled)">描边</button>
       <template v-if="layer.strokeEnabled">
@@ -26,77 +42,53 @@
         <span class="value">{{ strokeWidth }}</span>
       </template>
     </div>
-    <div class="tool-row">
-      <label>对齐</label>
-      <div class="btn-group">
-        <button v-for="a in aligns" :key="a.value" class="toggle-btn" :class="{ active: layer.align === a.value }" @click="updateProp('align', a.value)">{{ a.label }}</button>
-      </div>
-    </div>
-    <div class="tool-row">
-      <label>行距</label>
-      <div class="btn-group">
-        <button v-for="lh in lineHeights" :key="lh.value" class="toggle-btn" :class="{ active: Math.abs(layer.lineHeight - lh.value) < 0.05 }" @click="updateProp('lineHeight', lh.value)">{{ lh.label }}</button>
-      </div>
-    </div>
-    <div class="tool-row">
-      <label>阴影</label>
-      <button class="toggle-btn" :class="{ active: layer.shadowEnabled }" @click="updateProp('shadowEnabled', !layer.shadowEnabled)">阴影</button>
-      <template v-if="layer.shadowEnabled">
-        <input type="color" :value="layer.shadowColor" @input="updateProp('shadowColor', ($event.target as HTMLInputElement).value)" class="color-picker small" />
-        <input type="range" :min="0" :max="20" v-model.number="shadowBlur" class="slider" />
-        <span class="value">{{ shadowBlur }}</span>
-      </template>
-    </div>
-    <div class="tool-row">
-      <label>旋转</label>
-      <input type="range" :min="-180" :max="180" v-model.number="rotation" class="slider" />
-      <span class="value">{{ rotation }}°</span>
-      <button class="toggle-btn small" @click="updateProp('rotation', 0)">归零</button>
-    </div>
     <div class="tool-row actions">
-      <button class="action-btn classic" @click="emit('classic')">经典样式</button>
-      <button class="action-btn" @click="emit('center')">水平居中</button>
       <button class="action-btn" @click="emit('reset')">恢复默认</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import type { TextLayer } from '../types/meme'
 
 const props = defineProps<{ layer: TextLayer }>()
 const emit = defineEmits<{
   (e: 'update:layer', id: string, changes: Partial<TextLayer>): void
-  (e: 'classic'): void
-  (e: 'center'): void
   (e: 'reset'): void
 }>()
 
 const fontSize = ref(props.layer.fontSize)
 const strokeWidth = ref(props.layer.strokeWidth)
-const shadowBlur = ref(props.layer.shadowBlur)
-const rotation = ref(props.layer.rotation)
+const rotation = ref(props.layer.rotation ?? 0)
 watch(() => props.layer.fontSize, (v) => { fontSize.value = v })
 watch(() => props.layer.strokeWidth, (v) => { strokeWidth.value = v })
-watch(() => props.layer.shadowBlur, (v) => { shadowBlur.value = v })
-watch(() => props.layer.rotation, (v) => { rotation.value = v })
+watch(() => props.layer.rotation, (v) => { rotation.value = v ?? 0 })
 watch(fontSize, (v) => updateProp('fontSize', v))
 watch(strokeWidth, (v) => updateProp('strokeWidth', v))
-watch(shadowBlur, (v) => updateProp('shadowBlur', v))
 watch(rotation, (v) => updateProp('rotation', v))
 
-const colorPresets = ['#ffffff', '#000000', '#ffdd00', '#ff3333']
-const aligns = [
-  { value: 'left' as const, label: '左' },
-  { value: 'center' as const, label: '中' },
-  { value: 'right' as const, label: '右' },
+const fontOptions = [
+  { value: 'cute', label: '可爱', family: '"ZCOOL KuaiLe", cursive', weight: 'normal' as const },
+  { value: 'heiti', label: '黑体', family: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif', weight: 'bold' as const },
+  { value: 'extra', label: '超粗', family: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif', weight: 'extra-bold' as const },
 ]
-const lineHeights = [
-  { value: 1.1, label: '紧凑' },
-  { value: 1.3, label: '标准' },
-  { value: 1.6, label: '宽松' },
-]
+
+const currentFont = computed(() => {
+  const match = fontOptions.find(f => f.family === props.layer.fontFamily && f.weight === props.layer.fontWeight)
+  return match?.value ?? 'heiti'
+})
+
+function selectFont(value: string) {
+  const option = fontOptions.find(f => f.value === value)
+  if (!option) return
+  emit('update:layer', props.layer.id, {
+    fontFamily: option.family,
+    fontWeight: option.weight,
+  })
+}
+
+const colorPresets = ['#ffffff', '#4ade80', '#ffdd00', '#ff3333']
 
 function updateProp(key: string, value: any) {
   emit('update:layer', props.layer.id, { [key]: value })
@@ -163,6 +155,10 @@ function updateProp(key: string, value: any) {
   width: 24px;
   height: 24px;
 }
+.btn-group {
+  display: flex;
+  gap: 4px;
+}
 .toggle-btn {
   padding: 4px 12px;
   border-radius: 6px;
@@ -175,14 +171,16 @@ function updateProp(key: string, value: any) {
   min-height: 36px;
   transition: all 0.2s;
 }
+.toggle-btn.small {
+  padding: 4px 8px;
+  min-width: 32px;
+  min-height: 28px;
+  font-size: 12px;
+}
 .toggle-btn.active {
   background: rgba(77,166,255,0.2);
   border-color: #4da6ff;
   color: #4da6ff;
-}
-.btn-group {
-  display: flex;
-  gap: 4px;
 }
 .actions {
   gap: 6px;
@@ -201,10 +199,5 @@ function updateProp(key: string, value: any) {
 }
 .action-btn:active {
   transform: scale(0.96);
-}
-.action-btn.classic {
-  background: rgba(77,166,255,0.15);
-  border-color: #4da6ff;
-  color: #4da6ff;
 }
 </style>

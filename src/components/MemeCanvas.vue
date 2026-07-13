@@ -6,18 +6,17 @@
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
       @pointercancel="onPointerUp"
-      @touchstart="onTouchStart"
-      @touchmove="onTouchMove"
-      @touchend="onTouchEnd"
+      @click="onCanvasClick"
+      @wheel="onWheel"
     />
     <div class="gesture-hint" v-if="showHint">
-      <span>单指拖动文字 · 双指缩放旋转</span>
+      <span>点击文字可编辑 · 拖动移动文字 · 滚轮缩放 · Shift+滚轮旋转</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import type { MemeProject } from '../types/meme'
 import { renderMeme } from '../services/memeRenderer'
 
@@ -27,7 +26,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:layer', id: string, changes: Partial<{ x: number; y: number; rotation: number }>): void
+  (e: 'update:layer', id: string, changes: Partial<{ x: number; y: number; fontSize: number; rotation: number }>): void
+  (e: 'edit', layerId: string): void
+  (e: 'gestureStart'): void
+  (e: 'gestureEnd'): void
 }>()
 
 const canvasRef = ref<HTMLCanvasElement>()
@@ -38,18 +40,18 @@ const dragStart = ref({ x: 0, y: 0 })
 const layerStart = ref({ x: 0, y: 0 })
 const showHint = ref(true)
 
-// Canvas display scale for pinch zoom
-const displayScale = ref(1)
-const displayOffset = ref({ x: 0, y: 0 })
-
-// Touch state for gestures
-const touches = ref<Map<number, { x: number; y: number }>>(new Map())
+// Touch gesture state
 const initialPinchDistance = ref(0)
-const initialPinchScale = ref(1)
+const initialFontSize = ref(0)
 const initialPinchRotation = ref(0)
 const initialLayerRotation = ref(0)
 const isPinching = ref(false)
-const isRotating = ref(false)
+// Throttle resize to avoid jitter
+let lastEmittedFontSize = 0
+let rafId = 0
+// Touch single-finger tap detection
+let touchDownPos = { x: 0, y: 0 }
+let touchDownTime = 0
 
 function render() {
   if (!canvasRef.value || !props.backgroundImage) return
@@ -57,15 +59,6 @@ function render() {
     scale: 1,
     showGuides: true,
   })
-  // Apply CSS transform for pinch zoom
-  applyDisplayTransform()
-}
-
-function applyDisplayTransform() {
-  if (!canvasRef.value) return
-  const s = displayScale.value
-  const { x, y } = displayOffset.value
-  canvasRef.value.style.transform = `translate(${x}px, ${y}px) scale(${s})`
 }
 
 watch(() => props.project, render, { deep: true })
@@ -73,46 +66,66 @@ watch(() => props.backgroundImage, render)
 
 onMounted(() => {
   render()
-  // Hide hint after 3 seconds
-  setTimeout(() => { showHint.value = false }, 3000)
+  setTimeout(() => { showHint.value = false }, 4000)
 })
 
-function getCanvasCoords(e: PointerEvent) {
+function getCanvasCoords(clientX: number, clientY: number) {
   if (!canvasRef.value) return { x: 0, y: 0 }
   const rect = canvasRef.value.getBoundingClientRect()
   const scaleX = canvasRef.value.width / rect.width
   const scaleY = canvasRef.value.height / rect.height
   return {
-    x: (e.clientX - rect.left) * scaleX,
-    y: (e.clientY - rect.top) * scaleY,
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY,
   }
 }
 
+function getActiveLayer() {
+  return props.project.textLayers.find((l) => l.id === props.project.activeTextLayerId)
+}
+
 function hitTest(cx: number, cy: number): boolean {
-  const layer = props.project.textLayers.find((l) => l.id === props.project.activeTextLayerId)
-  if (!layer) return false
+  const layer = getActiveLayer()
+  if (!layer || !canvasRef.value) return false
+  const ctx = canvasRef.value.getContext('2d')
+  if (!ctx) return false
+  const weight = layer.fontWeight === 'extra-bold' ? '900' : layer.fontWeight
+  ctx.font = `${weight} ${layer.fontSize}px ${layer.fontFamily || 'sans-serif'}`
+  const textWidth = ctx.measureText(layer.text || ' ').width
+  const margin = layer.fontSize * 0.5
+  const textX = layer.align === 'center' ? layer.x + (layer.maxWidth - textWidth) / 2
+              : layer.align === 'right' ? layer.x + layer.maxWidth - textWidth
+              : layer.x
   return (
-    cx >= layer.x && cx <= layer.x + layer.maxWidth &&
-    cy >= layer.y && cy <= layer.y + layer.fontSize * 2
+    cx >= textX - margin && cx <= textX + textWidth + margin &&
+    cy >= layer.y - margin && cy <= layer.y + layer.fontSize * 2 + margin
   )
 }
 
+// Pointer drag state
+let downPos = { x: 0, y: 0 }
+
 function onPointerDown(e: PointerEvent) {
   if (isPinching.value) return
-  const coords = getCanvasCoords(e)
+  // Do NOT call e.preventDefault() - it blocks click events on desktop
+  const coords = getCanvasCoords(e.clientX, e.clientY)
+  downPos = { x: e.clientX, y: e.clientY }
+
+  const layer = getActiveLayer()
   if (hitTest(coords.x, coords.y)) {
     isDragging.value = true
+    emit('gestureStart')
     dragStart.value = coords
-    layerStart.value = { x: props.project.textLayers[0]?.x ?? 0, y: props.project.textLayers[0]?.y ?? 0 }
+    // FIX: Use active layer, not textLayers[0]
+    layerStart.value = { x: layer?.x ?? 0, y: layer?.y ?? 0 }
     ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
-    e.preventDefault()
   }
 }
 
 function onPointerMove(e: PointerEvent) {
   if (!isDragging.value || isPinching.value) return
-  const coords = getCanvasCoords(e)
-  const layer = props.project.textLayers.find((l) => l.id === props.project.activeTextLayerId)
+  const coords = getCanvasCoords(e.clientX, e.clientY)
+  const layer = getActiveLayer()
   if (!layer) return
 
   let newX = layerStart.value.x + (coords.x - dragStart.value.x)
@@ -126,11 +139,47 @@ function onPointerMove(e: PointerEvent) {
   emit('update:layer', layer.id, { x: Math.round(newX), y: Math.round(newY) })
 }
 
-function onPointerUp() {
+function onPointerUp(e: PointerEvent) {
+  if (isDragging.value) emit('gestureEnd')
   isDragging.value = false
 }
 
-// ---- Touch gestures (pinch zoom & rotate) ----
+// Reliable click handler for editing - works on both desktop and mobile
+function onCanvasClick(e: MouseEvent) {
+  const coords = getCanvasCoords(e.clientX, e.clientY)
+  const layer = getActiveLayer()
+  if (layer && hitTest(coords.x, coords.y)) {
+    emit('edit', layer.id)
+  }
+}
+
+// ---- Mouse wheel: zoom (Ctrl/Cmd) and rotate (Shift) ----
+function onWheel(e: WheelEvent) {
+  e.preventDefault()
+  const layer = getActiveLayer()
+  if (!layer) return
+
+  if (e.shiftKey) {
+    // Shift + wheel = rotate
+    emit('gestureStart')
+    const delta = e.deltaY > 0 ? 5 : -5
+    let newRotation = (layer.rotation ?? 0) + delta
+    // Clamp to -180..180
+    if (newRotation > 180) newRotation -= 360
+    if (newRotation < -180) newRotation += 360
+    emit('update:layer', layer.id, { rotation: Math.round(newRotation) })
+    emit('gestureEnd')
+  } else {
+    // Wheel = zoom font size
+    emit('gestureStart')
+    const delta = e.deltaY > 0 ? -2 : 2
+    const newFontSize = Math.max(16, Math.min(200, layer.fontSize + delta))
+    emit('update:layer', layer.id, { fontSize: newFontSize })
+    emit('gestureEnd')
+  }
+}
+
+// ---- Touch gestures ----
 function getTouchDistance(t1: Touch, t2: Touch): number {
   const dx = t2.clientX - t1.clientX
   const dy = t2.clientY - t1.clientY
@@ -145,14 +194,27 @@ function onTouchStart(e: TouchEvent) {
   if (e.touches.length === 2) {
     isPinching.value = true
     isDragging.value = false
+    emit('gestureStart')
     const t1 = e.touches[0]
     const t2 = e.touches[1]
     initialPinchDistance.value = getTouchDistance(t1, t2)
-    initialPinchScale.value = displayScale.value
+    const layer = getActiveLayer()
+    initialFontSize.value = layer?.fontSize ?? 72
     initialPinchRotation.value = getTouchAngle(t1, t2)
-    const layer = props.project.textLayers.find((l) => l.id === props.project.activeTextLayerId)
     initialLayerRotation.value = layer?.rotation ?? 0
-    e.preventDefault()
+    lastEmittedFontSize = initialFontSize.value
+  } else if (e.touches.length === 1 && !isPinching.value) {
+    const t = e.touches[0]
+    touchDownPos = { x: t.clientX, y: t.clientY }
+    touchDownTime = Date.now()
+    const coords = getCanvasCoords(t.clientX, t.clientY)
+    const layer = getActiveLayer()
+    if (hitTest(coords.x, coords.y)) {
+      isDragging.value = true
+      dragStart.value = coords
+      // FIX: Use active layer
+      layerStart.value = { x: layer?.x ?? 0, y: layer?.y ?? 0 }
+    }
   }
 }
 
@@ -163,26 +225,54 @@ function onTouchMove(e: TouchEvent) {
     const dist = getTouchDistance(t1, t2)
     const angle = getTouchAngle(t1, t2)
 
-    // Pinch zoom
+    const layer = getActiveLayer()
+    if (!layer) return
+
     if (initialPinchDistance.value > 0) {
-      const scale = (dist / initialPinchDistance.value) * initialPinchScale.value
-      displayScale.value = Math.max(0.5, Math.min(3, scale))
+      const ratio = dist / initialPinchDistance.value
+      const newFontSize = Math.round(Math.max(16, Math.min(200, initialFontSize.value * ratio)))
+      if (Math.abs(newFontSize - lastEmittedFontSize) >= 2) {
+        cancelAnimationFrame(rafId)
+        rafId = requestAnimationFrame(() => {
+          emit('update:layer', layer.id, { fontSize: newFontSize })
+          lastEmittedFontSize = newFontSize
+        })
+      }
     }
 
-    // Rotation
     const rotationDelta = angle - initialPinchRotation.value
-    const layer = props.project.textLayers.find((l) => l.id === props.project.activeTextLayerId)
-    if (layer) {
-      emit('update:layer', layer.id, { rotation: Math.round(initialLayerRotation.value + rotationDelta) })
-    }
+    emit('update:layer', layer.id, { rotation: Math.round(initialLayerRotation.value + rotationDelta) })
+  } else if (e.touches.length === 1 && isDragging.value) {
+    const t = e.touches[0]
+    const coords = getCanvasCoords(t.clientX, t.clientY)
+    const layer = getActiveLayer()
+    if (!layer) return
 
-    applyDisplayTransform()
-    e.preventDefault()
+    let newX = layerStart.value.x + (coords.x - dragStart.value.x)
+    let newY = layerStart.value.y + (coords.y - dragStart.value.y)
+
+    const maxX = props.backgroundImage!.naturalWidth - layer.maxWidth
+    const maxY = props.backgroundImage!.naturalHeight - layer.fontSize
+    newX = Math.max(-layer.maxWidth * 0.8, Math.min(maxX + layer.maxWidth * 0.8, newX))
+    newY = Math.max(-layer.fontSize, Math.min(maxY + layer.fontSize, newY))
+
+    emit('update:layer', layer.id, { x: Math.round(newX), y: Math.round(newY) })
   }
 }
 
 function onTouchEnd(e: TouchEvent) {
-  if (e.touches.length < 2) {
+  if (e.touches.length === 0) {
+    // On mobile: detect tap via distance (no time check needed)
+    if (!isDragging.value && touchDownTime > 0) {
+      // Single tap on text -> edit (distance-based, no movement happened)
+      const layer = getActiveLayer()
+      if (layer) emit('edit', layer.id)
+    }
+    if (isDragging.value || isPinching.value) emit('gestureEnd')
+    isDragging.value = false
+    isPinching.value = false
+  } else if (e.touches.length < 2) {
+    if (isPinching.value) emit('gestureEnd')
     isPinching.value = false
   }
 }
@@ -204,10 +294,11 @@ function onTouchEnd(e: TouchEvent) {
 canvas {
   width: 100%;
   height: auto;
-  max-height: 60vh;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
   display: block;
-  transform-origin: center center;
-  transition: transform 0.1s ease-out;
+  touch-action: none;
 }
 .gesture-hint {
   position: absolute;
@@ -220,7 +311,8 @@ canvas {
   padding: 6px 14px;
   border-radius: 20px;
   pointer-events: none;
-  animation: fadeOut 0.5s ease 2.5s forwards;
+  animation: fadeOut 0.5s ease 3.5s forwards;
+  white-space: nowrap;
 }
 @keyframes fadeOut {
   from { opacity: 1; }
