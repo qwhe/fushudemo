@@ -1,5 +1,83 @@
-# Vue 3 + TypeScript + Vite
+# 鼠鼠嘴替 / 负鼠表情
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+不会说的，让鼠鼠替你说。
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+鼠鼠嘴替是一款轻量的表情包制作工具：上传一张图片，选一句有梗文案，拖一拖、调一调，就能快速生成一张适合聊天使用的表情图。
+
+在线体验：[https://qwhe.github.io/fushudemo/](https://qwhe.github.io/fushudemo/)
+
+初赛介绍帖：[TRAE 官方中文社区](https://forum.trae.cn/t/topic/146378)
+
+## 项目定位
+
+聊天里最难的有时候不是没话说，而是找不到“刚好那一句”。这个项目希望把图片、文案和排版这三个关键控制权交给用户，让普通人不用打开专业设计软件，也能快速做出自己的“互联网嘴替”。
+
+它适合这些场景：
+
+- 想把手机相册里的图片快速做成表情包；
+- 想找一句更贴合当前情绪的聊天回复；
+- 想自己调整文字大小、位置、颜色和描边；
+- 想在电脑或手机浏览器里直接完成制作。
+
+## 核心功能
+
+- 换背景图：支持上传自己的图片作为表情素材。
+- 选文案：内置上班、摆烂、社交、没钱、熬夜、万能回复等多类文案。
+- 自定义文字：可以直接编辑文案，写出自己的表达。
+- 所见即所得编辑：支持拖动、缩放、旋转文字，并调整字体、字号、颜色和描边。
+- 撤销与重做：编辑过程中可以回退和恢复操作。
+- 生成与分享：生成表情图片，便于保存或分享使用。
+- 跨端适配：桌面端适合细致排版，移动端适合随手选图和即时制作。
+
+## 使用方式
+
+1. 打开在线体验地址；
+2. 点击“换背景图”，上传一张图片；
+3. 从文案区选择一句话，或直接输入自定义文字；
+4. 拖动文字并调整样式；
+5. 点击“生成表情包”，保存生成结果。
+
+如果不知道从哪句开始，可以先试试：
+
+> 大家都停一下，我有话说。
+
+## 技术栈
+
+- Vue 3
+- TypeScript
+- Vite
+- Canvas 图片合成
+- Vitest 单元测试
+
+## 本地开发
+
+```bash
+npm install
+npm run dev
+```
+
+构建生产版本：
+
+```bash
+npm run build
+```
+
+运行测试：
+
+```bash
+npm run test
+```
+
+## 创作背景
+
+这个项目最初来自一个很直接的想法：做一个能在电脑和手机上使用的表情包生成器。相比让 AI 替用户生成一切，鼠鼠嘴替更关注真实聊天场景里的即时需求：用用户已经拥有的图片，加上一句刚好能表达情绪的话，快速得到可控、可用、能发出去的结果。
+
+从需求梳理、交互原型、核心功能开发，到移动端适配与部署，项目通过 TRAE 辅助完成，并在真实浏览器和移动端环境中持续迭代。
+
+## 后续计划
+
+- 增加更多负鼠角色和热门梗图模板；
+- 增加随机模板与随机文案玩法；
+- 优化文字自动适配和一键居中；
+- 增加常用文案收藏；
+- 继续完善品牌视觉和分享链路。
