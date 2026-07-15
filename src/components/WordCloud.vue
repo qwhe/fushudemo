@@ -44,6 +44,7 @@ const shuffledCaptions = computed(() => {
   gap: 6px;
   max-height: 180px;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 0 16px;
 }
 .cloud-tag {

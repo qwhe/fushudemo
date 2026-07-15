@@ -3,18 +3,18 @@
     <!-- Mobile Layout -->
     <div class="mobile-layout">
       <header class="mobile-header">
-        <h1 class="app-title">负鼠有话说</h1>
+        <h1 class="app-title">鼠鼠嘴替</h1>
         <div class="header-actions">
-          <button class="icon-btn" @click="triggerUpload" title="换背景图">
+          <button class="icon-btn" @click="triggerUpload" title="换背景图" aria-label="换背景图">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
           </button>
-          <button class="icon-btn" :disabled="!history.canUndo.value" @click="onUndo" title="撤销">
+          <button class="icon-btn" :disabled="!history.canUndo.value" @click="onUndo" title="撤销" aria-label="撤销">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h13a4 4 0 010 8H9"/><path d="M7 6l-4 4 4 4"/></svg>
           </button>
-          <button class="icon-btn" :disabled="!history.canRedo.value" @click="onRedo" title="重做">
+          <button class="icon-btn" :disabled="!history.canRedo.value" @click="onRedo" title="重做" aria-label="重做">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10H8a4 4 0 000 8h7"/><path d="M17 6l4 4-4 4"/></svg>
           </button>
-          <button class="icon-btn" @click="confirmRestart" title="重新开始">
+          <button class="icon-btn" @click="confirmRestart" title="重新开始" aria-label="重新开始">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
           </button>
         </div>
@@ -72,7 +72,7 @@
     <!-- Desktop Layout -->
     <div class="desktop-layout">
       <aside class="desktop-sidebar">
-        <h1 class="app-title desktop-title">负鼠有话说</h1>
+        <h1 class="app-title desktop-title">鼠鼠嘴替</h1>
 
         <section class="desktop-section">
           <h3 class="section-title">背景</h3>
@@ -150,17 +150,6 @@
     </div>
 
     <Toast ref="toastRef" />
-
-    <!-- Reset Confirmation Dialog -->
-    <div v-if="showResetConfirm" class="confirm-overlay" @click.self="cancelReset">
-      <div class="confirm-dialog">
-        <p class="confirm-message">确定要重新开始吗？当前编辑内容将不会被保存。</p>
-        <div class="confirm-actions">
-          <button class="btn-secondary" @click="cancelReset">取消</button>
-          <button class="btn-primary btn-danger" @click="doReset">确定</button>
-        </div>
-      </div>
-    </div>
 
     <ExportPreview
       :blob-url="exportBlobUrl"
@@ -439,8 +428,13 @@ async function onExport() {
     reader.onload = () => {
       exportBlobUrl.value = reader.result as string
     }
+    reader.onerror = () => {
+      toastRef.value?.show('生成预览失败，请重试', 'error')
+    }
     reader.readAsDataURL(exportBlob)
-  } catch {}
+  } catch {
+    toastRef.value?.show('生成失败，请重试', 'error')
+  }
 }
 
 function onDownload() {
@@ -624,7 +618,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  padding: 12px 8px 0;
   min-height: 0;
   position: relative;
 }
@@ -795,6 +789,10 @@ body {
     overflow: hidden;
     min-width: 0;
     position: relative;
+  }
+
+  .canvas-area {
+    padding: 8px;
   }
 
   .desktop-canvas-area canvas {

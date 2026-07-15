@@ -14,7 +14,7 @@ export function useShare() {
     supportsClipboard.value = !!(navigator.clipboard && navigator.clipboard.write)
   })
 
-  async function shareWithFallback(blob: Blob, title: string = '负鼠表情包') {
+  async function shareWithFallback(blob: Blob, title: string = '鼠鼠嘴替表情包') {
     const file = new File([blob], `opossum-meme.${EXT}`, { type: MIME })
 
     if (typeof navigator.share === 'function') {
@@ -29,12 +29,7 @@ export function useShare() {
           }
         }
       }
-      try {
-        await navigator.share({ title, text: title })
-        return { shared: true }
-      } catch (e) {
-        if ((e as Error).name === 'AbortError') return { shared: false, aborted: true }
-      }
+      return { shared: false, aborted: false, fileUnsupported: true }
     }
 
     return { shared: false, aborted: false }
@@ -69,7 +64,7 @@ export function useShare() {
           await navigator.clipboard.write([
             new ClipboardItem({
               'text/html': textBlob,
-              'text/plain': new Blob(['负鼠表情包'], { type: 'text/plain' }),
+              'text/plain': new Blob(['鼠鼠嘴替表情包'], { type: 'text/plain' }),
             }),
           ])
           return { ok: true, fallback: true }
@@ -90,11 +85,15 @@ export function useShare() {
         const ctx = canvas.getContext('2d')!
         ctx.drawImage(img, 0, 0)
         canvas.toBlob((pngBlob) => {
+          URL.revokeObjectURL(img.src)
           if (pngBlob) resolve(pngBlob)
           else reject(new Error('PNG conversion failed'))
         }, 'image/png')
       }
-      img.onerror = () => reject(new Error('Image load failed'))
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src)
+        reject(new Error('Image load failed'))
+      }
       img.src = URL.createObjectURL(jpegBlob)
     })
   }
