@@ -83,21 +83,6 @@
           <img :src="logoSrc" alt="负鼠表情 Logo" />
         </div>
 
-        <div class="rail-tools">
-          <button class="rail-button" type="button" @click="scrollToSection('background-section')">
-            <IconPhoto :size="21" stroke-width="1.7" />
-            <span>背景</span>
-          </button>
-          <button class="rail-button" type="button" @click="scrollToSection('caption-section')">
-            <IconMessageCircle :size="21" stroke-width="1.7" />
-            <span>文案</span>
-          </button>
-          <button class="rail-button is-active" type="button" @click="scrollToSection('style-section')">
-            <IconTypography :size="21" stroke-width="1.7" />
-            <span>文字</span>
-          </button>
-        </div>
-
         <div class="mini-program-entry">
           <div class="mini-program-popover">
             <div class="mini-program-head">
@@ -257,12 +242,9 @@ import miniProgramCodeSrc from './assets/miniprogram-code.png'
 import {
   IconArrowBackUp,
   IconArrowForwardUp,
-  IconMessageCircle,
-  IconPhoto,
   IconQrcode,
   IconRefresh,
   IconSparkles,
-  IconTypography,
 } from '@tabler/icons-vue'
 
 const {
@@ -319,10 +301,6 @@ onBeforeUnmount(() => {
 function triggerUpload() {
   const input = window.innerWidth >= 768 ? fileInputRef2.value : fileInputRef.value
   input?.click()
-}
-
-function scrollToSection(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function onFileSelected(e: Event) {
@@ -919,14 +897,6 @@ body {
     border-radius: 9px;
   }
 
-  .rail-tools {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    width: 100%;
-    margin-top: 38px;
-  }
-
   .rail-button {
     width: 56px;
     min-height: 58px;
@@ -961,7 +931,7 @@ body {
   .mini-program-entry {
     position: relative;
     width: 100%;
-    margin-top: auto;
+    margin-top: 30px;
   }
 
   .mini-program-popover {
