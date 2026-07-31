@@ -936,8 +936,8 @@ body {
 
   .mini-program-popover {
     position: absolute;
-    left: 70px;
-    bottom: 0;
+    left: 0;
+    top: 66px;
     width: 210px;
     padding: 14px;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -948,7 +948,7 @@ body {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transform: translateX(-6px);
+    transform: translateY(-6px);
     transition: opacity 150ms ease, transform 150ms ease, visibility 150ms;
   }
 
@@ -957,7 +957,7 @@ body {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transform: translateX(0);
+    transform: translateY(0);
   }
 
   .mini-program-entry:hover .mini-program-button,
@@ -970,12 +970,12 @@ body {
   .mini-program-popover::before {
     content: "";
     position: absolute;
-    left: -6px;
-    bottom: 22px;
+    left: 22px;
+    top: -6px;
     width: 11px;
     height: 11px;
     border-left: 1px solid rgba(255, 255, 255, 0.1);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     background: #18191e;
     transform: rotate(45deg);
   }
