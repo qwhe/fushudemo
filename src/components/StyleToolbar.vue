@@ -263,4 +263,16 @@ function updateProp(key: string, value: any) {
 .action-btn:active {
   transform: scale(0.96);
 }
+@media (min-width: 768px) {
+  .style-toolbar {
+    gap: 18px;
+  }
+  .tool-row {
+    min-height: 36px;
+    gap: 12px;
+  }
+  .tool-row label {
+    font-size: 13px;
+  }
+}
 </style>

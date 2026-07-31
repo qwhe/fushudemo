@@ -79,4 +79,14 @@ const shuffledCaptions = computed(() => {
   color: rgba(255, 255, 255, 0.92);
   transform: translateY(-1px);
 }
+@media (min-width: 768px) {
+  .cloud-scroll {
+    gap: 8px;
+  }
+  .cloud-tag {
+    padding: 7px 12px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
 </style>
