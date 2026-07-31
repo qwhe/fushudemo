@@ -99,7 +99,7 @@
         </div>
 
         <div class="mini-program-entry">
-          <div v-if="showMiniProgram" class="mini-program-popover">
+          <div class="mini-program-popover">
             <div class="mini-program-head">
               <span>微信扫码打开</span>
               <span class="mini-program-badge">小程序</span>
@@ -109,10 +109,8 @@
           </div>
           <button
             class="rail-button mini-program-button"
-            :class="{ 'is-active': showMiniProgram }"
             type="button"
             aria-label="打开微信小程序码"
-            @click="showMiniProgram = !showMiniProgram"
           >
             <IconQrcode :size="21" stroke-width="1.7" />
             <span>小程序</span>
@@ -281,7 +279,6 @@ const share = useShare()
 
 const bgImage = ref<HTMLImageElement | null>(null)
 const showToolbar = ref(false)
-const showMiniProgram = ref(false)
 const exportBlobUrl = ref<string | null>(null)
 let exportBlob: Blob | null = null
 
@@ -881,9 +878,13 @@ body {
   .desktop-layout {
     display: grid;
     grid-template-columns: 76px 356px minmax(0, 1fr);
-    height: 100%;
-    width: 100%;
+    width: min(1400px, calc(100% - 48px));
+    height: calc(100% - 32px);
+    margin: 16px auto;
     overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 22px;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.32);
     background:
       radial-gradient(circle at 72% 34%, rgba(255, 255, 255, 0.025), transparent 33%),
       #111216;
@@ -974,6 +975,26 @@ body {
     background: rgba(24, 25, 30, 0.97);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(18px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(-6px);
+    transition: opacity 150ms ease, transform 150ms ease, visibility 150ms;
+  }
+
+  .mini-program-entry:hover .mini-program-popover,
+  .mini-program-entry:focus-within .mini-program-popover {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+
+  .mini-program-entry:hover .mini-program-button,
+  .mini-program-entry:focus-within .mini-program-button {
+    color: #7fafff;
+    border-color: rgba(96, 151, 255, 0.18);
+    background: rgba(70, 126, 232, 0.12);
   }
 
   .mini-program-popover::before {
