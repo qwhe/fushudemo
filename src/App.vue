@@ -10,7 +10,7 @@
     <!-- Mobile Layout -->
     <div class="mobile-layout">
       <header class="mobile-header">
-        <h1 class="app-title">负鼠有话说</h1>
+        <h1 class="app-title">负鼠表情</h1>
         <div class="header-actions">
           <button class="icon-btn" @click="triggerUpload" title="换背景图">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
@@ -78,10 +78,56 @@
 
     <!-- Desktop Layout -->
     <div class="desktop-layout">
-      <aside class="desktop-sidebar">
-        <h1 class="app-title desktop-title">负鼠有话说</h1>
+      <nav class="tool-rail" aria-label="编辑工具">
+        <div class="brand-tile" title="负鼠表情">
+          <img :src="logoSrc" alt="负鼠表情 Logo" />
+        </div>
 
-        <section class="desktop-section">
+        <div class="rail-tools">
+          <button class="rail-button" type="button" @click="scrollToSection('background-section')">
+            <IconPhoto :size="21" stroke-width="1.7" />
+            <span>背景</span>
+          </button>
+          <button class="rail-button" type="button" @click="scrollToSection('caption-section')">
+            <IconMessageCircle :size="21" stroke-width="1.7" />
+            <span>文案</span>
+          </button>
+          <button class="rail-button is-active" type="button" @click="scrollToSection('style-section')">
+            <IconTypography :size="21" stroke-width="1.7" />
+            <span>文字</span>
+          </button>
+        </div>
+
+        <div class="mini-program-entry">
+          <div v-if="showMiniProgram" class="mini-program-popover">
+            <div class="mini-program-head">
+              <span>微信扫码打开</span>
+              <span class="mini-program-badge">小程序</span>
+            </div>
+            <img :src="miniProgramCodeSrc" alt="负鼠表情微信小程序码" />
+            <p>手机微信扫一扫，随时制作表情</p>
+          </div>
+          <button
+            class="rail-button mini-program-button"
+            :class="{ 'is-active': showMiniProgram }"
+            type="button"
+            aria-label="打开微信小程序码"
+            @click="showMiniProgram = !showMiniProgram"
+          >
+            <IconQrcode :size="21" stroke-width="1.7" />
+            <span>小程序</span>
+          </button>
+        </div>
+      </nav>
+
+      <aside class="desktop-sidebar">
+        <header class="desktop-heading">
+          <p>OPOSSUM STUDIO</p>
+          <h1 class="app-title desktop-title">负鼠表情</h1>
+          <span>把情绪，做成一张图</span>
+        </header>
+
+        <section id="background-section" class="desktop-section">
           <h3 class="section-title">背景</h3>
           <button
             class="upload-dropzone"
@@ -100,12 +146,12 @@
           <input type="file" ref="fileInputRef2" accept="image/*" @change="onFileSelected" style="display:none" />
         </section>
 
-        <section class="desktop-section">
+        <section id="caption-section" class="desktop-section">
           <h3 class="section-title">文案</h3>
           <WordCloud @select="onCaptionSelect" />
         </section>
 
-        <section class="desktop-section">
+        <section id="style-section" class="desktop-section">
           <h3 class="section-title">文字样式</h3>
           <StyleToolbar
             v-if="activeLayer"
@@ -115,59 +161,59 @@
           />
         </section>
 
-        <section class="desktop-section">
-          <h3 class="section-title">生成与分享</h3>
-          <div class="desktop-actions">
-            <button class="btn-primary" @click="onExport" :disabled="exp.exporting.value">
-              {{ exp.exporting.value ? '正在生成...' : '生成表情包' }}
-            </button>
-          </div>
-          <div class="desktop-history">
-            <button class="icon-btn" :disabled="!history.canUndo.value" @click="onUndo">撤销</button>
-            <button class="icon-btn" :disabled="!history.canRedo.value" @click="onRedo">重做</button>
-            <button class="icon-btn danger" @click="confirmRestart">重新开始</button>
-          </div>
-        </section>
       </aside>
 
-      <main class="desktop-canvas-area" ref="canvasAreaRef2">
-        <MemeCanvas
-          :project="project"
-          :background-image="bgImage"
-          @update:layer="onDragLayer"
-          @edit="onStartEdit"
-          @gesture-start="onGestureStart"
-          @gesture-end="onGestureEnd"
-        />
-        <!-- Inline text editor overlay for desktop -->
-        <div v-if="editing" class="inline-editor" :style="editorStyle">
-          <textarea
-            ref="inlineTextareaRef"
-            v-model="editText"
-            class="inline-textarea"
-            rows="1"
-            maxlength="150"
-            @keydown.enter.exact="finishEdit"
-            @blur="finishEdit"
-            placeholder="输入表情包文案..."
+      <main class="desktop-stage">
+        <div class="stage-label">
+          <span>画布预览</span>
+          <span>点击文字编辑 · 拖动调整位置 · 滚轮缩放</span>
+        </div>
+        <div class="desktop-canvas-area" ref="canvasAreaRef2">
+          <MemeCanvas
+            :project="project"
+            :background-image="bgImage"
+            @update:layer="onDragLayer"
+            @edit="onStartEdit"
+            @gesture-start="onGestureStart"
+            @gesture-end="onGestureEnd"
           />
-          <div class="inline-hint">Enter 确认 · 点击外部关闭</div>
+          <div v-if="editing" class="inline-editor" :style="editorStyle">
+            <textarea
+              ref="inlineTextareaRef"
+              v-model="editText"
+              class="inline-textarea"
+              rows="1"
+              maxlength="150"
+              @keydown.enter.exact="finishEdit"
+              @blur="finishEdit"
+              placeholder="输入表情包文案..."
+            />
+            <div class="inline-hint">Enter 确认 · 点击外部关闭</div>
+          </div>
+        </div>
+
+        <div class="stage-actions">
+          <div class="desktop-history">
+            <button class="stage-icon-button" :disabled="!history.canUndo.value" @click="onUndo" title="撤销">
+              <IconArrowBackUp :size="19" stroke-width="1.7" />
+            </button>
+            <button class="stage-icon-button" :disabled="!history.canRedo.value" @click="onRedo" title="重做">
+              <IconArrowForwardUp :size="19" stroke-width="1.7" />
+            </button>
+            <button class="stage-text-button" @click="confirmRestart">
+              <IconRefresh :size="17" stroke-width="1.7" />
+              重新开始
+            </button>
+          </div>
+          <button class="generate-button" @click="onExport" :disabled="exp.exporting.value">
+            <IconSparkles :size="19" stroke-width="1.8" />
+            {{ exp.exporting.value ? '正在生成...' : '生成表情' }}
+          </button>
         </div>
       </main>
     </div>
 
     <ImageCropper ref="cropperRef" @cropped="onCropped" />
-
-    <!-- Reset confirmation dialog -->
-    <div v-if="showResetConfirm" class="confirm-overlay" @click.self="cancelReset">
-      <div class="confirm-dialog">
-        <p class="confirm-message">确定要重新开始吗？<br/>将恢复默认背景图和文案</p>
-        <div class="confirm-actions">
-          <button class="btn-secondary" @click="cancelReset">取消</button>
-          <button class="btn-secondary btn-danger" @click="doReset">确定重置</button>
-        </div>
-      </div>
-    </div>
 
     <Toast ref="toastRef" />
 
@@ -208,6 +254,18 @@ import ExportPreview from './components/ExportPreview.vue'
 import ImageCropper from './components/ImageCropper.vue'
 import Toast from './components/Toast.vue'
 import baseImageSrc from './assets/opossum-base.jpg'
+import logoSrc from './assets/opossum-logo.png'
+import miniProgramCodeSrc from './assets/miniprogram-code.png'
+import {
+  IconArrowBackUp,
+  IconArrowForwardUp,
+  IconMessageCircle,
+  IconPhoto,
+  IconQrcode,
+  IconRefresh,
+  IconSparkles,
+  IconTypography,
+} from '@tabler/icons-vue'
 
 const {
   project,
@@ -223,6 +281,7 @@ const share = useShare()
 
 const bgImage = ref<HTMLImageElement | null>(null)
 const showToolbar = ref(false)
+const showMiniProgram = ref(false)
 const exportBlobUrl = ref<string | null>(null)
 let exportBlob: Blob | null = null
 
@@ -263,6 +322,10 @@ onBeforeUnmount(() => {
 function triggerUpload() {
   const input = window.innerWidth >= 768 ? fileInputRef2.value : fileInputRef.value
   input?.click()
+}
+
+function scrollToSection(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function onFileSelected(e: Event) {
@@ -564,7 +627,7 @@ html, body {
 }
 
 body {
-  background: #0d1117;
+  background: #101115;
   color: #e8e8e8;
   font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -816,47 +879,224 @@ body {
   }
 
   .desktop-layout {
-    display: flex;
+    display: grid;
+    grid-template-columns: 76px 356px minmax(0, 1fr);
     height: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 16px 32px;
-    gap: 32px;
+    width: 100%;
     overflow: hidden;
+    background:
+      radial-gradient(circle at 72% 34%, rgba(255, 255, 255, 0.025), transparent 33%),
+      #111216;
   }
 
-  .desktop-sidebar {
-    width: 340px;
-    flex-shrink: 0;
-    overflow-y: auto;
+  .tool-rail {
+    position: relative;
+    z-index: 20;
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding-right: 8px;
+    align-items: center;
+    padding: 20px 10px 14px;
+    background: #0b0c0f;
+    border-right: 1px solid rgba(255, 255, 255, 0.065);
   }
 
-  .desktop-title {
-    font-size: 22px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  .brand-tile {
+    width: 48px;
+    height: 48px;
+    padding: 4px;
+    overflow: hidden;
+    border-radius: 13px;
+    background: #f1eee8;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.32);
   }
 
-  .desktop-section {
+  .brand-tile img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    border-radius: 9px;
+  }
+
+  .rail-tools {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 7px;
+    width: 100%;
+    margin-top: 38px;
   }
 
-  .upload-dropzone {
-    min-height: 104px;
+  .rail-button {
+    width: 56px;
+    min-height: 58px;
+    margin: 0 auto;
+    padding: 8px 4px 7px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 5px;
-    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border: 1px solid transparent;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.025);
+    background: transparent;
+    color: rgba(226, 229, 235, 0.46);
+    font: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    transition: 160ms ease;
+  }
+
+  .rail-button:hover {
+    color: rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.045);
+  }
+
+  .rail-button.is-active {
+    color: #7fafff;
+    border-color: rgba(96, 151, 255, 0.18);
+    background: rgba(70, 126, 232, 0.12);
+  }
+
+  .mini-program-entry {
+    position: relative;
+    width: 100%;
+    margin-top: auto;
+  }
+
+  .mini-program-popover {
+    position: absolute;
+    left: 70px;
+    bottom: 0;
+    width: 210px;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    background: rgba(24, 25, 30, 0.97);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(18px);
+  }
+
+  .mini-program-popover::before {
+    content: "";
+    position: absolute;
+    left: -6px;
+    bottom: 22px;
+    width: 11px;
+    height: 11px;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: #18191e;
+    transform: rotate(45deg);
+  }
+
+  .mini-program-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: #f3f4f6;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .mini-program-badge {
+    padding: 3px 6px;
+    border-radius: 99px;
+    background: rgba(68, 203, 113, 0.12);
+    color: #62d98b;
+    font-size: 9px;
+    font-weight: 500;
+  }
+
+  .mini-program-popover img {
+    width: 100%;
+    display: block;
+    border-radius: 11px;
+    background: #fff;
+  }
+
+  .mini-program-popover p {
+    margin-top: 9px;
+    color: rgba(225, 228, 234, 0.42);
+    font-size: 10px;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .desktop-sidebar {
+    min-width: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    padding: 32px 25px 34px;
+    background: #121318;
+    border-right: 1px solid rgba(255, 255, 255, 0.055);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(143, 154, 172, 0.18) transparent;
+  }
+
+  .desktop-sidebar::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .desktop-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .desktop-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(129, 144, 166, 0.24);
+    border-radius: 999px;
+  }
+
+  .desktop-heading {
+    padding: 2px 2px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .desktop-heading p {
+    margin-bottom: 9px;
+    color: rgba(126, 172, 255, 0.7);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+  }
+
+  .desktop-heading span {
+    display: block;
+    margin-top: 7px;
+    color: rgba(228, 230, 236, 0.35);
+    font-size: 11px;
+  }
+
+  .desktop-title {
+    font-size: 24px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+
+  .desktop-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scroll-margin-top: 24px;
+  }
+
+  .desktop-section + .desktop-section {
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.055);
+  }
+
+  .upload-dropzone {
+    min-height: 116px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border: 1px dashed rgba(160, 171, 189, 0.21);
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.022);
     color: rgba(255, 255, 255, 0.38);
     font: inherit;
     cursor: pointer;
@@ -865,39 +1105,73 @@ body {
 
   .upload-dropzone:hover,
   .upload-dropzone.is-dragging {
-    border-color: rgba(77, 166, 255, 0.75);
-    background: rgba(77, 166, 255, 0.08);
+    border-color: rgba(103, 158, 255, 0.72);
+    background: rgba(70, 126, 232, 0.08);
     color: rgba(255, 255, 255, 0.65);
   }
 
   .upload-title {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.48);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.42);
   }
 
   .upload-hint {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.26);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.22);
   }
 
   .section-title {
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: rgba(226, 229, 235, 0.48);
+    letter-spacing: 0.1em;
+  }
+
+  .desktop-stage {
+    min-width: 0;
+    min-height: 0;
+    padding: 40px 44px 30px;
+    display: grid;
+    grid-template-columns: minmax(0, 760px);
+    grid-template-rows: auto auto auto;
+    align-content: center;
+    justify-content: center;
+    gap: 14px;
+    overflow: hidden;
+  }
+
+  .stage-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: rgba(229, 232, 238, 0.28);
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+
+  .stage-label span:first-child {
+    color: rgba(229, 232, 238, 0.55);
+    font-weight: 600;
+    letter-spacing: 0.12em;
   }
 
   .desktop-canvas-area {
-    flex: 1;
+    width: 100%;
+    height: min(64vh, 620px);
+    min-height: 0;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     overflow: hidden;
-    min-width: 0;
-    padding-top: 76px;
-    padding-bottom: 16px;
+    padding: 8px;
     position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 24px;
+    background:
+      linear-gradient(45deg, rgba(255, 255, 255, 0.014) 25%, transparent 25%) 0 0 / 18px 18px,
+      linear-gradient(-45deg, rgba(255, 255, 255, 0.014) 25%, transparent 25%) 0 9px / 18px 18px,
+      #0c0d11;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
   }
 
   .desktop-canvas-area canvas {
@@ -907,29 +1181,89 @@ body {
     height: auto;
   }
 
-  .desktop-actions {
+  .stage-actions {
     display: flex;
-    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
   }
 
-  .desktop-actions .btn-primary {
-    flex: 1;
+  .generate-button {
+    min-width: 156px;
+    height: 46px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6ba4ff, #4d82ed);
+    box-shadow: 0 10px 28px rgba(53, 105, 211, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    color: white;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 160ms ease;
+  }
+
+  .generate-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 13px 34px rgba(53, 105, 211, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  }
+
+  .generate-button:disabled {
+    opacity: 0.5;
+    cursor: wait;
   }
 
   .desktop-history {
     display: flex;
-    gap: 6px;
-    margin-top: 4px;
+    align-items: center;
+    gap: 7px;
   }
 
-  .desktop-history .icon-btn {
-    flex: 1;
-    font-size: 12px;
+  .stage-icon-button,
+  .stage-text-button {
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.025);
+    color: rgba(230, 233, 239, 0.52);
+    font: inherit;
+    cursor: pointer;
+    transition: 150ms ease;
+  }
+
+  .stage-icon-button {
+    width: 38px;
+  }
+
+  .stage-text-button {
+    gap: 6px;
+    padding: 0 12px;
+    font-size: 11px;
+  }
+
+  .stage-icon-button:hover:not(:disabled),
+  .stage-text-button:hover {
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.055);
+  }
+
+  .stage-icon-button:disabled {
+    opacity: 0.25;
+    cursor: default;
   }
 }
 
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -937,7 +1271,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background: rgba(129, 144, 166, 0.24);
+  border-radius: 999px;
 }
 </style>

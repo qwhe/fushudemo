@@ -303,6 +303,12 @@ canvas {
 @media (min-width: 768px) {
   .canvas-wrapper {
     align-items: flex-start;
+    border-radius: 18px;
+  }
+  canvas {
+    border: 1px solid rgba(160, 174, 192, 0.13);
+    border-radius: 18px;
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.2);
   }
 }
 .gesture-hint {

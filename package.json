@@ -12,6 +12,7 @@
     "build:sites": "vue-tsc -b && vite build --mode sites && node scripts/create-sites-server.mjs"
   },
   "dependencies": {
+    "@tabler/icons-vue": "^3.46.0",
     "vue": "^3.5.39"
   },
   "devDependencies": {

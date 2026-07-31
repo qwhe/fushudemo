@@ -5,7 +5,6 @@
         v-for="(item, i) in shuffledCaptions"
         :key="i"
         class="cloud-tag"
-        :style="{ fontSize: item.size + 'px', opacity: item.opacity }"
         @click="emit('select', item.text)"
       >
         {{ item.text }}
@@ -25,43 +24,59 @@ const emit = defineEmits<{
 const shuffledCaptions = computed(() => {
   const all = captionCategories.flatMap((c) => c.captions)
   const shuffled = [...all].sort(() => Math.random() - 0.5)
-  return shuffled.map((text) => ({
-    text,
-    size: 11 + Math.random() * 5,
-    opacity: 0.5 + Math.random() * 0.5,
-  }))
+  return shuffled.map((text) => ({ text }))
 })
 </script>
 
 <style scoped>
 .word-cloud {
-  padding: 8px 0;
+  padding: 2px 0;
   overflow: hidden;
 }
 .cloud-scroll {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 7px;
   max-height: 180px;
   overflow-y: auto;
-  padding: 0 16px;
+  overflow-x: hidden;
+  padding: 0 8px 0 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(129, 144, 166, 0.28) transparent;
+}
+.cloud-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.cloud-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cloud-scroll::-webkit-scrollbar-thumb {
+  background: rgba(129, 144, 166, 0.28);
+  border-radius: 999px;
+}
+.cloud-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 144, 166, 0.44);
 }
 .cloud-tag {
-  padding: 4px 12px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 13px;
+  max-width: 100%;
+  padding: 6px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(151, 164, 181, 0.11);
+  background: rgba(151, 164, 181, 0.055);
+  color: rgba(231, 236, 243, 0.68);
+  font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  line-height: 1.4;
+  transition: color 0.18s, background 0.18s, border-color 0.18s, transform 0.18s;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.45;
 }
 .cloud-tag:hover,
 .cloud-tag:active {
-  background: rgba(77, 166, 255, 0.15);
-  border-color: rgba(77, 166, 255, 0.4);
-  color: #fff;
+  background: rgba(88, 166, 255, 0.12);
+  border-color: rgba(88, 166, 255, 0.26);
+  color: rgba(255, 255, 255, 0.92);
+  transform: translateY(-1px);
 }
 </style>

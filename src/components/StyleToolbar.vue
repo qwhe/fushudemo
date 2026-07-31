@@ -19,7 +19,7 @@
       <input type="range" :min="16" :max="120" v-model.number="fontSize" class="slider" />
       <span class="value">{{ fontSize }}</span>
     </div>
-    <div class="tool-row">
+    <div class="tool-row rotation-row">
       <label>旋转</label>
       <input type="range" :min="-180" :max="180" v-model.number="rotation" class="slider" />
       <span class="value">{{ rotation }}°</span>
@@ -35,12 +35,14 @@
     </div>
     <div class="tool-row">
       <label>描边</label>
-      <button class="toggle-btn" :class="{ active: layer.strokeEnabled }" @click="updateProp('strokeEnabled', !layer.strokeEnabled)">描边</button>
-      <template v-if="layer.strokeEnabled">
-        <input type="color" :value="layer.strokeColor" @input="updateProp('strokeColor', ($event.target as HTMLInputElement).value)" class="color-picker small" />
-        <input type="range" :min="0" :max="8" v-model.number="strokeWidth" class="slider" />
-        <span class="value">{{ strokeWidth }}</span>
-      </template>
+      <div class="stroke-controls">
+        <button class="toggle-btn" :class="{ active: layer.strokeEnabled }" @click="updateProp('strokeEnabled', !layer.strokeEnabled)">描边</button>
+        <template v-if="layer.strokeEnabled">
+          <input type="color" :value="layer.strokeColor" @input="updateProp('strokeColor', ($event.target as HTMLInputElement).value)" class="color-picker small" />
+          <input type="range" :min="0" :max="8" v-model.number="strokeWidth" class="slider" />
+          <span class="value">{{ strokeWidth }}</span>
+        </template>
+      </div>
     </div>
     <div class="tool-row actions">
       <button class="action-btn" @click="emit('reset')">恢复默认</button>
@@ -99,57 +101,113 @@ function updateProp(key: string, value: any) {
 .style-toolbar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 13px;
 }
 .tool-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 10px;
 }
 .tool-row label {
-  color: rgba(255,255,255,0.6);
-  font-size: 13px;
-  min-width: 36px;
+  color: rgba(216, 224, 234, 0.48);
+  font-size: 12px;
+  letter-spacing: 0.02em;
 }
 .value {
-  color: #4da6ff;
-  font-size: 13px;
-  min-width: 28px;
+  color: rgba(116, 184, 255, 0.9);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  min-width: 32px;
+  text-align: right;
+}
+.rotation-row {
+  grid-template-columns: 42px minmax(0, 1fr) 32px 34px;
+}
+.stroke-controls {
+  grid-column: 2 / -1;
+  display: grid;
+  grid-template-columns: auto auto minmax(70px, 1fr) 24px;
+  align-items: center;
+  gap: 8px;
+}
+.stroke-controls > .toggle-btn {
+  min-width: 56px;
 }
 .slider {
   flex: 1;
   min-width: 80px;
-  accent-color: #4da6ff;
-  height: 4px;
+  width: 100%;
+  height: 18px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+.slider::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(172, 184, 199, 0.19);
+}
+.slider::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  margin-top: -5.5px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 3px solid #0f141a;
+  border-radius: 50%;
+  background: #67b2ff;
+  box-shadow: 0 0 0 1px rgba(103, 178, 255, 0.28);
+}
+.slider::-moz-range-track {
+  height: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(172, 184, 199, 0.19);
+}
+.slider::-moz-range-progress {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(103, 178, 255, 0.7);
+}
+.slider::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border: 3px solid #0f141a;
+  border-radius: 50%;
+  background: #67b2ff;
 }
 .color-presets {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
+  grid-column: 2 / -1;
 }
 .color-btn {
-  width: 28px;
-  height: 28px;
+  width: 25px;
+  height: 25px;
   border-radius: 50%;
-  border: 2px solid transparent;
+  border: 2px solid rgba(255,255,255,0.08);
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: box-shadow 0.18s, transform 0.18s;
 }
 .color-btn.active {
-  border-color: #4da6ff;
+  border-color: #0f141a;
+  box-shadow: 0 0 0 2px rgba(103, 178, 255, 0.88);
+  transform: scale(1.04);
 }
 .color-btn[data-bg="#000000"], .color-btn[data-bg="black"] {
   border: 2px solid rgba(255,255,255,0.3);
 }
 .color-picker {
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 7px;
   cursor: pointer;
-  background: none;
-  padding: 0;
+  background: rgba(255,255,255,0.05);
+  padding: 2px;
 }
 .color-picker.small {
   width: 24px;
@@ -157,19 +215,20 @@ function updateProp(key: string, value: any) {
 }
 .btn-group {
   display: flex;
-  gap: 4px;
+  gap: 5px;
+  grid-column: 2 / -1;
 }
 .toggle-btn {
-  padding: 4px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.05);
-  color: #ddd;
-  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(151, 164, 181, 0.13);
+  background: rgba(151, 164, 181, 0.055);
+  color: rgba(231, 236, 243, 0.66);
+  font-size: 12px;
   cursor: pointer;
   min-width: 40px;
-  min-height: 36px;
-  transition: all 0.2s;
+  min-height: 34px;
+  transition: color 0.18s, background 0.18s, border-color 0.18s, transform 0.18s;
 }
 .toggle-btn.small {
   padding: 4px 8px;
@@ -178,24 +237,28 @@ function updateProp(key: string, value: any) {
   font-size: 12px;
 }
 .toggle-btn.active {
-  background: rgba(77,166,255,0.2);
-  border-color: #4da6ff;
-  color: #4da6ff;
+  background: rgba(88, 166, 255, 0.13);
+  border-color: rgba(103, 178, 255, 0.5);
+  color: #80beff;
+}
+.toggle-btn:hover {
+  border-color: rgba(151, 164, 181, 0.28);
+  color: rgba(255,255,255,0.9);
 }
 .actions {
-  gap: 6px;
-  margin-top: 4px;
+  display: flex;
+  margin-top: 2px;
 }
 .action-btn {
-  padding: 6px 14px;
+  padding: 7px 13px;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.05);
-  color: #ddd;
-  font-size: 13px;
+  border: 1px solid rgba(151, 164, 181, 0.13);
+  background: transparent;
+  color: rgba(231, 236, 243, 0.56);
+  font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s;
-  min-height: 36px;
+  transition: color 0.18s, background 0.18s;
+  min-height: 34px;
 }
 .action-btn:active {
   transform: scale(0.96);
