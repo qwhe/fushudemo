@@ -300,6 +300,11 @@ canvas {
   display: block;
   touch-action: none;
 }
+@media (min-width: 768px) {
+  .canvas-wrapper {
+    align-items: flex-start;
+  }
+}
 .gesture-hint {
   position: absolute;
   bottom: 12px;
