@@ -891,10 +891,12 @@ body {
   .desktop-canvas-area {
     flex: 1;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     overflow: hidden;
     min-width: 0;
+    padding-top: 76px;
+    padding-bottom: 16px;
     position: relative;
   }
 

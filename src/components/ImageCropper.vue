@@ -13,12 +13,27 @@
               @mousemove="onMouseMove"
               @mouseup="onMouseUp"
               @mouseleave="onMouseUp"
+              @wheel.prevent="onWheel"
               @touchstart.prevent="onTouchStart"
               @touchmove.prevent="onTouchMove"
               @touchend="onTouchEnd"
             />
           </div>
-          <div class="crop-hint">拖动调整位置 · 双指缩放/旋转照片</div>
+          <div class="zoom-control">
+            <button type="button" aria-label="缩小图片" @click="changeZoom(-10)">−</button>
+            <input
+              :value="zoomPercent"
+              type="range"
+              min="100"
+              max="300"
+              step="1"
+              aria-label="图片缩放"
+              @input="onZoomInput"
+            />
+            <button type="button" aria-label="放大图片" @click="changeZoom(10)">＋</button>
+            <span>{{ zoomPercent }}%</span>
+          </div>
+          <div class="crop-hint">拖动调整位置 · 滚轮或滑杆缩放 · 双指缩放/旋转</div>
           <div class="crop-actions">
             <button class="crop-btn" @click="cancel">取消</button>
             <button class="crop-btn primary" @click="confirm">确认裁切</button>
@@ -42,6 +57,8 @@ const photoX = ref(0)
 const photoY = ref(0)
 const photoScale = ref(1)
 const photoRotation = ref(0)
+const minimumScale = ref(1)
+const zoomPercent = ref(100)
 
 // Crop output size (always square)
 const CROP_SIZE = 1200
@@ -84,7 +101,9 @@ function initView() {
   const iw = img.value.naturalWidth
   const ih = img.value.naturalHeight
   // Scale so the smaller side fills the crop area
-  photoScale.value = CROP_SIZE / Math.min(iw, ih)
+  minimumScale.value = CROP_SIZE / Math.min(iw, ih)
+  photoScale.value = minimumScale.value
+  zoomPercent.value = 100
   // Center the image
   photoX.value = (CROP_SIZE - iw * photoScale.value) / 2
   photoY.value = (CROP_SIZE - ih * photoScale.value) / 2
@@ -165,6 +184,34 @@ function onMouseUp() {
   isDragging.value = false
 }
 
+function setZoom(nextPercent: number) {
+  if (!img.value) return
+  const clampedPercent = Math.max(100, Math.min(300, Math.round(nextPercent)))
+  const nextScale = minimumScale.value * clampedPercent / 100
+  const centerX = CROP_SIZE / 2
+  const centerY = CROP_SIZE / 2
+  const imagePointX = (centerX - photoX.value) / photoScale.value
+  const imagePointY = (centerY - photoY.value) / photoScale.value
+
+  photoScale.value = nextScale
+  photoX.value = centerX - imagePointX * nextScale
+  photoY.value = centerY - imagePointY * nextScale
+  zoomPercent.value = clampedPercent
+  render()
+}
+
+function changeZoom(delta: number) {
+  setZoom(zoomPercent.value + delta)
+}
+
+function onZoomInput(e: Event) {
+  setZoom(Number((e.target as HTMLInputElement).value))
+}
+
+function onWheel(e: WheelEvent) {
+  changeZoom(e.deltaY > 0 ? -5 : 5)
+}
+
 // ---- Touch ----
 function touchDist(t1: Touch, t2: Touch) {
   const dx = t2.clientX - t1.clientX
@@ -208,7 +255,10 @@ function onTouchMove(e: TouchEvent) {
 
     if (initialPinchDist.value > 0) {
       // Scale
-      const newScale = initialScale.value * (dist / initialPinchDist.value)
+      const newScale = Math.max(
+        minimumScale.value,
+        Math.min(minimumScale.value * 3, initialScale.value * (dist / initialPinchDist.value))
+      )
       const iw = img.value!.naturalWidth
       const ih = img.value!.naturalHeight
       // Scale around center of crop area
@@ -217,6 +267,7 @@ function onTouchMove(e: TouchEvent) {
       const oldCenterPhotoX = (centerX - dragPhotoStart.value.x) / initialScale.value
       const oldCenterPhotoY = (centerY - dragPhotoStart.value.y) / initialScale.value
       photoScale.value = newScale
+      zoomPercent.value = Math.round(photoScale.value / minimumScale.value * 100)
       photoX.value = centerX - oldCenterPhotoX * newScale + (midX - dragStart.value.x) * ratio
       photoY.value = centerY - oldCenterPhotoY * newScale + (midY - dragStart.value.y) * ratio
       // Rotation
@@ -331,6 +382,36 @@ defineExpose({ open })
   color: rgba(255,255,255,0.5);
   font-size: 13px;
   text-align: center;
+}
+.zoom-control {
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 34px 44px;
+  align-items: center;
+  gap: 8px;
+}
+.zoom-control button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.78);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.zoom-control button:active {
+  transform: scale(0.94);
+}
+.zoom-control input {
+  width: 100%;
+  accent-color: #4da6ff;
+}
+.zoom-control span {
+  color: rgba(255,255,255,0.5);
+  font-size: 12px;
+  text-align: right;
 }
 .crop-actions {
   display: flex;
