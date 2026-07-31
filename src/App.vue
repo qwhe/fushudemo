@@ -1,5 +1,12 @@
 <template>
-  <div class="app">
+  <div
+    class="app"
+    :class="{ 'is-dragging-image': isDraggingImage }"
+    @dragenter.prevent="onDragEnter"
+    @dragover.prevent
+    @dragleave.prevent="onDragLeave"
+    @drop.prevent="onDrop"
+  >
     <!-- Mobile Layout -->
     <div class="mobile-layout">
       <header class="mobile-header">
@@ -76,7 +83,20 @@
 
         <section class="desktop-section">
           <h3 class="section-title">背景</h3>
-          <button class="btn-secondary" @click="triggerUpload">换背景图</button>
+          <button
+            class="upload-dropzone"
+            :class="{ 'is-dragging': isDraggingImage }"
+            type="button"
+            @click="triggerUpload"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+            <span class="upload-title">换背景图</span>
+            <span class="upload-hint">点击、拖拽或粘贴图片</span>
+          </button>
           <input type="file" ref="fileInputRef2" accept="image/*" @change="onFileSelected" style="display:none" />
         </section>
 
@@ -174,8 +194,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, triggerRef } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, triggerRef } from 'vue'
 import type { TextLayer, MemeProject } from './types/meme'
+import { findImageFile } from './utils/imageInput'
 import { useMemeProject } from './composables/useMemeProject'
 import { useHistory } from './composables/useHistory'
 import { useExport } from './composables/useExport'
@@ -215,6 +236,8 @@ const inlineTextareaRef = ref<HTMLTextAreaElement>()
 
 const editing = ref(false)
 const editText = ref('')
+const isDraggingImage = ref(false)
+let dragDepth = 0
 
 function loadBgImage(src: string) {
   const img = new Image()
@@ -230,21 +253,66 @@ function loadBgImage(src: string) {
 
 onMounted(() => {
   loadBgImage(baseImageSrc)
+  window.addEventListener('paste', onPaste)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('paste', onPaste)
 })
 
 function triggerUpload() {
-  fileInputRef.value?.click()
+  const input = window.innerWidth >= 768 ? fileInputRef2.value : fileInputRef.value
+  input?.click()
 }
 
 function onFileSelected(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
   ;(e.target as HTMLInputElement).value = ''
+  openImageFile(file)
+}
+
+function openImageFile(file: File) {
+  if (!file.type.startsWith('image/')) {
+    toastRef.value?.show('请选择图片文件', 'error')
+    return
+  }
   const reader = new FileReader()
   reader.onload = () => {
     cropperRef.value?.open(reader.result as string)
   }
+  reader.onerror = () => {
+    toastRef.value?.show('图片读取失败，请重试', 'error')
+  }
   reader.readAsDataURL(file)
+}
+
+function onDragEnter() {
+  dragDepth += 1
+  isDraggingImage.value = true
+}
+
+function onDragLeave() {
+  dragDepth = Math.max(0, dragDepth - 1)
+  if (dragDepth === 0) isDraggingImage.value = false
+}
+
+function onDrop(e: DragEvent) {
+  dragDepth = 0
+  isDraggingImage.value = false
+  const file = findImageFile(e.dataTransfer?.files)
+  if (file) {
+    openImageFile(file)
+  } else {
+    toastRef.value?.show('请拖入图片文件', 'error')
+  }
+}
+
+function onPaste(e: ClipboardEvent) {
+  const file = findImageFile(e.clipboardData?.files)
+  if (!file) return
+  e.preventDefault()
+  openImageFile(file)
 }
 
 function onCropped(dataUrl: string) {
@@ -777,6 +845,39 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+
+  .upload-dropzone {
+    min-height: 104px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.025);
+    color: rgba(255, 255, 255, 0.38);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+  }
+
+  .upload-dropzone:hover,
+  .upload-dropzone.is-dragging {
+    border-color: rgba(77, 166, 255, 0.75);
+    background: rgba(77, 166, 255, 0.08);
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  .upload-title {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.48);
+  }
+
+  .upload-hint {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.26);
   }
 
   .section-title {

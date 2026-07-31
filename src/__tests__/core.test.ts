@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import type { TextLayer } from '../types/meme'
 import { captionCategories, getRandomCaption } from '../data/captions'
+import { findImageFile } from '../utils/imageInput'
 
 // Mock canvas context for happy-dom
 function createMockCtx(): CanvasRenderingContext2D {
@@ -202,6 +203,22 @@ describe('captions', () => {
     const caption = getRandomCaption()
     expect(typeof caption).toBe('string')
     expect(caption.length).toBeGreaterThan(0)
+  })
+})
+
+describe('image input', () => {
+  it('finds an image among dropped or pasted files', () => {
+    const textFile = new File(['hello'], 'note.txt', { type: 'text/plain' })
+    const imageFile = new File(['image'], 'meme.png', { type: 'image/png' })
+
+    expect(findImageFile([textFile, imageFile])).toBe(imageFile)
+  })
+
+  it('returns null when no image is available', () => {
+    const textFile = new File(['hello'], 'note.txt', { type: 'text/plain' })
+
+    expect(findImageFile([textFile])).toBeNull()
+    expect(findImageFile(null)).toBeNull()
   })
 })
 
