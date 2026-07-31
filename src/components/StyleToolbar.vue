@@ -14,16 +14,16 @@
         </button>
       </div>
     </div>
-    <div class="tool-row">
-      <label>字号</label>
-      <input type="range" :min="16" :max="120" v-model.number="fontSize" class="slider" />
-      <span class="value">{{ fontSize }}</span>
-    </div>
     <div class="tool-row rotation-row">
       <label>旋转</label>
       <input type="range" :min="-180" :max="180" v-model.number="rotation" class="slider" />
       <span class="value">{{ rotation }}°</span>
       <button class="toggle-btn small" @click="updateProp('rotation', 0)" title="重置旋转">0°</button>
+    </div>
+    <div class="tool-row">
+      <label>字号</label>
+      <input type="range" :min="16" :max="120" v-model.number="fontSize" class="slider" />
+      <span class="value">{{ fontSize }}</span>
     </div>
     <div class="tool-row">
       <label>颜色</label>

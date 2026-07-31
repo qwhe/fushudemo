@@ -45,11 +45,11 @@
             class="inline-textarea"
             rows="1"
             maxlength="150"
+            @input="previewEdit"
             @keydown.enter.exact="finishEdit"
             @blur="finishEdit"
             placeholder="输入表情包文案..."
           />
-          <div class="inline-hint">Enter 确认 · 点击外部关闭</div>
         </div>
       </div>
 
@@ -167,11 +167,11 @@
               class="inline-textarea"
               rows="1"
               maxlength="150"
+              @input="previewEdit"
               @keydown.enter.exact="finishEdit"
               @blur="finishEdit"
               placeholder="输入表情包文案..."
             />
-            <div class="inline-hint">Enter 确认 · 点击外部关闭</div>
           </div>
         </div>
 
@@ -274,6 +274,7 @@ const inlineTextareaRef = ref<HTMLTextAreaElement>()
 
 const editing = ref(false)
 const editText = ref('')
+let editOriginalText = ''
 const isDraggingImage = ref(false)
 let dragDepth = 0
 
@@ -407,7 +408,7 @@ const editorStyle = computed(() => {
   const scaleY = canvasRect.height / bgImage.value.naturalHeight
 
   const left = offsetX + layer.x * scaleX
-  const top = offsetY + layer.y * scaleY - 44
+  const top = offsetY + layer.y * scaleY
 
   const maxLeft = areaRect.width - 16
   const maxTop = areaRect.height - 80
@@ -424,6 +425,7 @@ function onStartEdit() {
   if (!layer) return
   editing.value = true
   editText.value = layer.text
+  editOriginalText = layer.text
   nextTick(() => {
     inlineTextareaRef.value?.focus()
     const el = inlineTextareaRef.value
@@ -434,13 +436,20 @@ function onStartEdit() {
   })
 }
 
+function previewEdit() {
+  const layer = activeLayer.value
+  if (layer) updateLayer(layer.id, { text: editText.value })
+}
+
 function finishEdit() {
   if (!editing.value) return
   const layer = activeLayer.value
-  if (layer && editText.value !== layer.text) {
+  if (layer && editText.value !== editOriginalText) {
     flushHistory()
-    history.pushState(JSON.parse(JSON.stringify(project)))
-    updateLayer(layer.id, { text: editText.value })
+    const previous = JSON.parse(JSON.stringify(project)) as MemeProject
+    const previousLayer = previous.textLayers.find((item) => item.id === layer.id)
+    if (previousLayer) previousLayer.text = editOriginalText
+    history.pushState(previous)
   }
   editing.value = false
 }
@@ -750,27 +759,23 @@ body {
 }
 .inline-textarea {
   width: 100%;
-  background: rgba(0, 0, 0, 0.85);
-  border: 2px solid #4da6ff;
-  border-radius: 10px;
-  color: #f0f0f0;
-  font-size: 15px;
-  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: transparent;
+  caret-color: #ffffff;
+  font-size: 16px;
+  padding: 0;
   resize: none;
   outline: none;
   font-family: inherit;
   line-height: 1.5;
-  min-height: 40px;
+  min-height: 32px;
   max-height: 120px;
   overflow-y: auto;
 }
 .inline-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.3);
-}
-.inline-hint {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 11px;
-  text-align: center;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .editor-area {
